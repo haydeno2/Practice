@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useProducts } from '../api/products'
 import { EmptyState } from '../components/EmptyState'
@@ -26,6 +26,22 @@ export function Home() {
 
   const { data, isPending, isError, error, isFetching, refetch } = useProducts(filters)
 
+  // Page changes can grow or shrink the product grid (e.g. a 1-item last page
+  // vs. a full page), which shifts everything below it — including the
+  // pagination bar itself. Anchor on the pagination bar's on-screen position
+  // instead of the raw scroll offset, so it stays put under the cursor
+  // through the URL update and the refetch.
+  const paginationRef = useRef<HTMLDivElement>(null)
+  const anchorTop = useRef<number | null>(null)
+
+  useLayoutEffect(() => {
+    if (anchorTop.current !== null && paginationRef.current) {
+      const delta = paginationRef.current.getBoundingClientRect().top - anchorTop.current
+      if (delta !== 0) window.scrollBy(0, delta)
+      if (!isFetching) anchorTop.current = null
+    }
+  })
+
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams)
     if (value) next.set(key, value)
@@ -40,6 +56,9 @@ export function Home() {
   }
 
   function handlePageChange(nextPage: number) {
+    if (paginationRef.current) {
+      anchorTop.current = paginationRef.current.getBoundingClientRect().top
+    }
     const next = new URLSearchParams(searchParams)
     next.set('page', String(nextPage))
     setSearchParams(next)
@@ -107,7 +126,9 @@ export function Home() {
       )}
 
       {data && (
-        <Pagination page={data.page} totalPages={data.totalPages} onPageChange={handlePageChange} />
+        <div ref={paginationRef}>
+          <Pagination page={data.page} totalPages={data.totalPages} onPageChange={handlePageChange} />
+        </div>
       )}
     </div>
   )

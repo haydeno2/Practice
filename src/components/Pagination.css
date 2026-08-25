@@ -1,0 +1,21 @@
+.page-input::-webkit-outer-spin-button,
+.page-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.page-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+  min-width: 2ch;
+  max-width: 100%;
+  
+  width: 3ch;
+}
+
+@supports (field-sizing: content) {
+  .page-input {
+    field-sizing: content;
+    width: auto;
+  }
+}
